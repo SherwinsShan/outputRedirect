@@ -37,3 +37,5 @@ outputRedirect_Close(&testLog);
 ``` 
 
 ##### 注意，暂时还不支持多线程（可以在多线程下使用全部接口，但是在多线程情况下，printf等输出结果未知， 可以用outputRedirect_OriPrintf、outputRedirect_FilePrintf或outputRedirect_AllPrintf代替）
+
+  void test();
