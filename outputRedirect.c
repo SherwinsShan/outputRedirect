@@ -1,7 +1,7 @@
 
 #include "outputRedirect.h"
 #include <stdio.h>
-
+#include <sys/stat.h>  
 
 
 int outputRedirect_Init(outputRedirect* or, const char* filename, const char* mode)
@@ -11,42 +11,29 @@ int outputRedirect_Init(outputRedirect* or, const char* filename, const char* mo
 	{
 		return -1;
 	}
-
+	or->fd = fileno(or->pfile);
 	{//mark
 		or->pstdout = stdout;
 		or->pstderr = stderr;
 	}
-	{
-		pthread_mutex_init(&(or->lock), 0);
-	}
-
-	or->ptemp = or->pfile;
-
-	or->isRedirect = false;
+	or->max_size	= 0;
+	or->ptemp		= or->pfile;
+	or->isRedirect 	= false;
 	return 0;
 }
 
 void outputRedirect_Close(outputRedirect* or)
 {
-	bool temp;
-
-	pthread_mutex_lock(&(or->lock));
-	temp = or->isRedirect;
-	pthread_mutex_unlock(&(or->lock));
-
-	if(temp)
+	if(or->isRedirect)
 	{
 		outputRedirect_End(or);
 	}
-
-	pthread_mutex_destroy(&(or->lock));
 	fclose(or->pfile);
 }
 
 int outputRedirect_Start(outputRedirect* or)
 {
 	int ret = -1;
-	pthread_mutex_lock(&(or->lock));
 	if(!or->isRedirect)
 	{
 		or->ptemp = stdout;
@@ -54,21 +41,38 @@ int outputRedirect_Start(outputRedirect* or)
 		or->isRedirect = true;
 		ret =  0;
 	}
-	pthread_mutex_unlock(&(or->lock));
 	return ret;
 }
 
+void outputRedirect_SetMaxSize(outputRedirect* or, unsigned long maxSize)
+{
+	or->max_size = maxSize;
+}
 
 void outputRedirect_Flush(outputRedirect* or)
 {
+	struct stat fileStat;
 	if(or->pfile != NULL)
 		fflush(or->pfile);
+	
+	if(or->max_size == 0)
+		return ;
+	
+
+	if(fstat(or->fd, &fileStat) != -1)
+	{
+		if(fileStat.st_size > or->max_size)
+		{
+			ftruncate(or->fd, 0);
+			fseek(or->pfile, 0, SEEK_SET);
+		}
+	}
 }
 
 int outputRedirect_End(outputRedirect* or)
 {
 	int ret = -1;
-	pthread_mutex_lock(&(or->lock));
+
 	if(or->isRedirect)
 	{
 		outputRedirect_Flush(or);
@@ -78,8 +82,6 @@ int outputRedirect_End(outputRedirect* or)
 		or->isRedirect = false;
 		ret = 0;
 	}
-
-	pthread_mutex_unlock(&(or->lock));
 	return ret;
 
 }

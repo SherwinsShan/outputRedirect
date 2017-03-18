@@ -12,7 +12,9 @@ typedef struct
 	FILE* pstderr;
 	FILE* ptemp;
 	bool  isRedirect;
-	pthread_mutex_t lock;
+	//pthread_mutex_t lock;
+	int	  fd;
+	unsigned long max_size;
 }outputRedirect;
 
 #define MOED_WR_ONCE	"w"
@@ -28,11 +30,12 @@ typedef struct
 #define FONT_COLOR_WHITE		"\33[37m"
 
 
-int outputRedirect_Open(outputRedirect* or, const char* filename, const char* mode);//打开重定向文件
-void outputRedirect_Close(outputRedirect* or);//关闭重定向文件
-int outputRedirect_Start(outputRedirect* or);//开始重定向
-void outputRedirect_Flush(outputRedirect* or);//刷新重定向文件
-int outputRedirect_End(outputRedirect* or);//结束重定向
+int		outputRedirect_Open(outputRedirect* or, const char* filename, const char* mode);//打开重定向文件
+void	outputRedirect_Close(outputRedirect* or);//关闭重定向文件
+int 	outputRedirect_Start(outputRedirect* or);//开始重定向
+void 	outputRedirect_SetMaxSize(outputRedirect* or, unsigned long maxSize);//设置文件最大容量，超过容量后会
+void 	outputRedirect_Flush(outputRedirect* or);//刷新重定向文件
+int 	outputRedirect_End(outputRedirect* or);//结束重定向
 
 
 
